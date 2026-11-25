@@ -17,7 +17,7 @@
 ```
 portfolio/
 ├── public/                 # Static assets & public files
-├── sequence/               # Canvas frame sequence images (for Hero scroll scrubbing)
+├── public/sequence/        # Canvas frame sequence images (for Hero scroll scrubbing)
 ├── src/
 │   ├── components/         # Modular UI Components
 │   │   ├── ContactModal.tsx       # Email copy & contact form modal

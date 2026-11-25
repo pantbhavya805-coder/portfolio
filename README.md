@@ -1,93 +1,150 @@
-# portfolio
+# Bhavya Pant — Portfolio
 
+A personal portfolio site for a backend / distributed-systems engineer. It opens with a scroll-driven hero animation, then walks through a career story, case studies with animated architecture diagrams, an experience timeline, and a tech-stack grid. Visitors can reach out through a contact form that logs the message to Google Sheets, emails it to the owner, and sends the visitor an automatic reply.
 
+Built with **React 18 + TypeScript + Vite 6 + Tailwind CSS**. It deploys to **Vercel** as a static site with one serverless function.
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Features
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- **Scroll-scrubbed hero.** A 75-frame image sequence is drawn on a `<canvas>` and moves with the scroll position across a 550vh sticky section. A text overlay changes across five scroll stages.
+- **Career scrollytelling.** Cards that cover the Java, Kafka, AI and DevOps parts of the journey.
+- **Case studies.** Project cards open a tabbed modal (architecture / highlights / tech) with live SVG flow diagrams:
+  - Fortivance: AI third-party risk and incident response platform for Indian banks (GoDaddy Hackathon)
+  - Amcom AI Enterprise Platform: generative AI WhatsApp automation
+  - Solar & EV Charge IoT Platform: high-throughput telemetry and OCPI-based EV charging
+  - Resource Management System (Visa): secure bank-offer APIs with RBAC
+- **Experience timeline** with metric badges and tech pills.
+- **Filterable skills grid** (Backend, Messaging, AI, Cloud, DevOps, Frontend).
+- **Resume modal** with a quick summary and a PDF download.
+- **Contact form** backed by a serverless API (see [Contact API](#contact-api)).
+- Responsive from 320px to 1440px+, with a dark glassmorphic theme and Framer Motion animations.
 
-## Add your files
+## Tech Stack
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+| Layer      | Tools                                                   |
+|------------|---------------------------------------------------------|
+| UI         | React 18, TypeScript, Framer Motion, Lucide icons       |
+| Styling    | Tailwind CSS 3.4, PostCSS, custom utilities in `globals.css` |
+| Build      | Vite 6, `tsc` strict type checking                      |
+| Backend    | Vercel serverless function (`api/contact.ts`), Nodemailer (Gmail SMTP), Google Apps Script webhook |
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ (the contact API relies on the built-in `fetch`)
+- npm
+
+### Install and run
+
+```bash
+npm install
+npm run dev        # http://localhost:3000
+```
+
+> `npm run dev` serves only the front end. To try the contact form locally, run the project with the [Vercel CLI](https://vercel.com/docs/cli) so that `/api/contact` is served too:
+>
+> ```bash
+> npm i -g vercel
+> vercel dev
+> ```
+
+### Scripts
+
+| Command           | What it does                                   |
+|-------------------|------------------------------------------------|
+| `npm run dev`     | Starts the Vite dev server on port 3000        |
+| `npm run build`   | Type-checks with `tsc`, then builds to `dist/` |
+| `npm run preview` | Serves the production build locally            |
+
+Run `npm run build` after structural changes. It fails on any TypeScript error.
+
+## Environment Variables
+
+Create a `.env` file for local use (it is git-ignored) and set the same values in your Vercel project settings:
+
+```env
+# Google Apps Script web-app URL that appends form submissions to a sheet
+GOOGLE_SHEETS_WEBHOOK_URL=https://script.google.com/macros/s/XXXX/exec
+
+# Gmail App Password for the account that sends the emails
+EMAIL_ACCESS_TOKEN=xxxx xxxx xxxx xxxx
+```
+
+`EMAIL_TOKEN` also works in place of `EMAIL_ACCESS_TOKEN`. Use a Gmail [App Password](https://support.google.com/accounts/answer/185833), not your normal account password.
+
+## Contact API
+
+`POST /api/contact` with a JSON body:
+
+```json
+{ "name": "Jane Doe", "email": "jane@example.com", "message": "Hi there!" }
+```
+
+The handler in [`api/contact.ts`](api/contact.ts):
+
+1. Checks that `name`, `email` and `message` are all present (if not, it returns `400`).
+2. Logs the submission to Google Sheets through the webhook, if one is configured.
+3. Emails the inquiry to the portfolio owner through Gmail SMTP, with `replyTo` set to the visitor.
+4. Sends the visitor an automatic "thank you" reply.
+5. Returns `200` if either the sheet log or the owner email succeeded, and `500` otherwise:
+
+```json
+{ "success": true, "sheetLogged": true, "emailSent": true, "message": "Inquiry processed and auto-reply sent" }
+```
+
+The sender and recipient Gmail address is set directly in `api/contact.ts`. Change it there if you fork the project.
+
+## Project Structure
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/bhavyapant/portfolio.git
-git branch -M main
-git push -uf origin main
+portfolio/
+├── api/
+│   └── contact.ts              # Serverless contact handler (Sheets + Gmail)
+├── public/
+│   ├── Resume_Bhavya_Pant.pdf  # Resume served at /Resume_Bhavya_Pant.pdf
+│   └── sequence/               # 75 hero animation frames (ezgif-frame-001…075.jpg)
+├── src/
+│   ├── components/
+│   │   ├── Navbar/             # Fixed glass navbar and mobile drawer
+│   │   ├── HeroCanvas/         # Canvas frame renderer and lighting
+│   │   ├── HeroOverlay/        # Five-stage scroll overlay and CTAs
+│   │   ├── ScrollStory/        # Career scrollytelling cards
+│   │   ├── Projects/           # Case study grid, modal, SVG diagrams
+│   │   ├── Timeline/           # Experience timeline
+│   │   ├── Skills/             # Filterable tech-stack grid
+│   │   ├── Footer/             # Footer with live IST clock
+│   │   ├── ContactModal.tsx
+│   │   └── ResumeModal.tsx
+│   ├── hooks/
+│   │   ├── useFrameSequence.ts # Preloads the hero frames
+│   │   └── useScrollProgress.ts# Scroll progress from 0 to 1 for a section
+│   ├── styles/globals.css      # Tailwind base, glass utilities, scrollbar
+│   ├── App.tsx                 # Puts the sections and modals together
+│   └── main.tsx                # React entry point
+├── index.html
+├── tailwind.config.js          # Theme colors, fonts, keyframes
+└── vite.config.ts              # Dev server on :3000, "@" → src alias
 ```
 
-## Integrate with your tools
+## Customizing
 
-* [Set up project integrations](https://gitlab.com/bhavyapant/portfolio/-/settings/integrations)
+- **Content.** Projects, timeline entries and skills are defined as arrays at the top of their component files (for example `src/components/Projects/ProjectsSection.tsx`).
+- **Resume.** Replace `public/Resume_Bhavya_Pant.pdf`, or update `RESUME_URL` in `ResumeModal.tsx`.
+- **Hero animation.** Put new frames in `public/sequence/` using the same naming pattern, then update `TOTAL_FRAMES` in `src/hooks/useFrameSequence.ts`.
+- **Hero length.** The hero section height (`h-[550vh]` in `App.tsx`) is tied to the stage thresholds in `HeroOverlay.tsx`. If you change one, change the other.
+- **Diagrams.** On mobile, the SVG connector lines are hidden (`hidden md:block`) and the diagram nodes stack vertically.
 
-## Collaborate with your team
+## Deployment
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+The project is set up for Vercel:
 
-## Test and Deploy
+1. Import the repository in Vercel. It detects the Vite framework preset automatically (build: `npm run build`, output: `dist`).
+2. Add `GOOGLE_SHEETS_WEBHOOK_URL` and `EMAIL_ACCESS_TOKEN` under **Project Settings → Environment Variables**.
+3. Deploy. Files in `api/` are deployed as serverless functions automatically.
 
-Use the built-in continuous integration in GitLab.
+## Contact
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+**Bhavya Pant**. Use the contact form on the live site, or open an issue in this repository.
